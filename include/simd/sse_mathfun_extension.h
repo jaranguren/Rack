@@ -72,224 +72,224 @@ atan2_ps max deviation is < 2.5e-7
 #include "sse_mathfun.h"
 
 
-inline __m128 sse_mathfun_tancot_ps(__m128 x, int cotFlag) {
-	__m128 p0 = _mm_set_ps1(9.38540185543E-3);
-	__m128 p1 = _mm_set_ps1(3.11992232697E-3);
-	__m128 p2 = _mm_set_ps1(2.44301354525E-2);
-	__m128 p3 = _mm_set_ps1(5.34112807005E-2);
-	__m128 p4 = _mm_set_ps1(1.33387994085E-1);
-	__m128 p5 = _mm_set_ps1(3.33331568548E-1);
+inline simde__m128 sse_mathfun_tancot_ps(simde__m128 x, int cotFlag) {
+	simde__m128 p0 = simde_mm_set_ps1(9.38540185543E-3);
+	simde__m128 p1 = simde_mm_set_ps1(3.11992232697E-3);
+	simde__m128 p2 = simde_mm_set_ps1(2.44301354525E-2);
+	simde__m128 p3 = simde_mm_set_ps1(5.34112807005E-2);
+	simde__m128 p4 = simde_mm_set_ps1(1.33387994085E-1);
+	simde__m128 p5 = simde_mm_set_ps1(3.33331568548E-1);
 
-	__m128 xmm1, xmm2 = _mm_setzero_ps(), xmm3, sign_bit, y;
+	simde__m128 xmm1, xmm2 = simde_mm_setzero_ps(), xmm3, sign_bit, y;
 
-	__m128i emm2;
+	simde__m128i emm2;
 	sign_bit = x;
 	/* take the absolute value */
-	__m128 sign_mask = _mm_castsi128_ps(_mm_set1_epi32(0x80000000));
-	__m128 inv_sign_mask = _mm_castsi128_ps(_mm_set1_epi32(~0x80000000));
-	x = _mm_and_ps(x, inv_sign_mask);
+	simde__m128 sign_mask = simde_mm_castsi128_ps(simde_mm_set1_epi32(0x80000000));
+	simde__m128 inv_sign_mask = simde_mm_castsi128_ps(simde_mm_set1_epi32(~0x80000000));
+	x = simde_mm_and_ps(x, inv_sign_mask);
 	/* extract the sign bit (upper one) */
-	sign_bit = _mm_and_ps(sign_bit, sign_mask);
+	sign_bit = simde_mm_and_ps(sign_bit, sign_mask);
 
 	/* scale by 4/Pi */
-	__m128 cephes_FOPI = _mm_set_ps1(1.27323954473516);
-	y = _mm_mul_ps(x, cephes_FOPI);
+	simde__m128 cephes_FOPI = simde_mm_set_ps1(1.27323954473516);
+	y = simde_mm_mul_ps(x, cephes_FOPI);
 
 	/* store the integer part of y in mm0 */
-	emm2 = _mm_cvttps_epi32(y);
+	emm2 = simde_mm_cvttps_epi32(y);
 	/* j=(j+1) & (~1) (see the cephes sources) */
-	emm2 = _mm_add_epi32(emm2, _mm_set1_epi32(1));
-	emm2 = _mm_and_si128(emm2, _mm_set1_epi32(~1));
-	y = _mm_cvtepi32_ps(emm2);
+	emm2 = simde_mm_add_epi32(emm2, simde_mm_set1_epi32(1));
+	emm2 = simde_mm_and_si128(emm2, simde_mm_set1_epi32(~1));
+	y = simde_mm_cvtepi32_ps(emm2);
 
-	emm2 = _mm_and_si128(emm2, _mm_set1_epi32(2));
-	emm2 = _mm_cmpeq_epi32(emm2, _mm_setzero_si128());
+	emm2 = simde_mm_and_si128(emm2, simde_mm_set1_epi32(2));
+	emm2 = simde_mm_cmpeq_epi32(emm2, simde_mm_setzero_si128());
 
-	__m128 poly_mask = _mm_castsi128_ps(emm2);
+	simde__m128 poly_mask = simde_mm_castsi128_ps(emm2);
 	/* The magic pass: "Extended precision modular arithmetic"
 	   x = ((x - y * DP1) - y * DP2) - y * DP3; */
-	__m128 minus_cephes_DP1 = _mm_set_ps1(-0.78515625);
-	__m128 minus_cephes_DP2 = _mm_set_ps1(-2.4187564849853515625e-4);
-	__m128 minus_cephes_DP3 = _mm_set_ps1(-3.77489497744594108e-8);
+	simde__m128 minus_cephes_DP1 = simde_mm_set_ps1(-0.78515625);
+	simde__m128 minus_cephes_DP2 = simde_mm_set_ps1(-2.4187564849853515625e-4);
+	simde__m128 minus_cephes_DP3 = simde_mm_set_ps1(-3.77489497744594108e-8);
 	xmm1 = minus_cephes_DP1;
 	xmm2 = minus_cephes_DP2;
 	xmm3 = minus_cephes_DP3;
-	xmm1 = _mm_mul_ps(y, xmm1);
-	xmm2 = _mm_mul_ps(y, xmm2);
-	xmm3 = _mm_mul_ps(y, xmm3);
-	__m128 z = _mm_add_ps(x, xmm1);
-	z = _mm_add_ps(z, xmm2);
-	z = _mm_add_ps(z, xmm3);
+	xmm1 = simde_mm_mul_ps(y, xmm1);
+	xmm2 = simde_mm_mul_ps(y, xmm2);
+	xmm3 = simde_mm_mul_ps(y, xmm3);
+	simde__m128 z = simde_mm_add_ps(x, xmm1);
+	z = simde_mm_add_ps(z, xmm2);
+	z = simde_mm_add_ps(z, xmm3);
 
-	__m128 zz = _mm_mul_ps(z, z);
+	simde__m128 zz = simde_mm_mul_ps(z, z);
 
 	y = p0;
-	y = _mm_mul_ps(y, zz);
-	y = _mm_add_ps(y, p1);
-	y = _mm_mul_ps(y, zz);
-	y = _mm_add_ps(y, p2);
-	y = _mm_mul_ps(y, zz);
-	y = _mm_add_ps(y, p3);
-	y = _mm_mul_ps(y, zz);
-	y = _mm_add_ps(y, p4);
-	y = _mm_mul_ps(y, zz);
-	y = _mm_add_ps(y, p5);
-	y = _mm_mul_ps(y, zz);
-	y = _mm_mul_ps(y, z);
-	y = _mm_add_ps(y, z);
+	y = simde_mm_mul_ps(y, zz);
+	y = simde_mm_add_ps(y, p1);
+	y = simde_mm_mul_ps(y, zz);
+	y = simde_mm_add_ps(y, p2);
+	y = simde_mm_mul_ps(y, zz);
+	y = simde_mm_add_ps(y, p3);
+	y = simde_mm_mul_ps(y, zz);
+	y = simde_mm_add_ps(y, p4);
+	y = simde_mm_mul_ps(y, zz);
+	y = simde_mm_add_ps(y, p5);
+	y = simde_mm_mul_ps(y, zz);
+	y = simde_mm_mul_ps(y, z);
+	y = simde_mm_add_ps(y, z);
 
-	__m128 y2;
+	simde__m128 y2;
 	if (cotFlag) {
-		y2 = _mm_xor_ps(y, sign_mask);
-		/* y = _mm_rcp_ps(y); */
-		/* using _mm_rcp_ps here loses on way too much precision, better to do a div */
-		y = _mm_div_ps(_mm_set_ps1(1.f), y);
+		y2 = simde_mm_xor_ps(y, sign_mask);
+		/* y = simde_mm_rcp_ps(y); */
+		/* using simde_mm_rcp_ps here loses on way too much precision, better to do a div */
+		y = simde_mm_div_ps(simde_mm_set_ps1(1.f), y);
 	}
 	else {
-		/* y2 = _mm_rcp_ps(y); */
-		/* using _mm_rcp_ps here loses on way too much precision, better to do a div */
-		y2 = _mm_div_ps(_mm_set_ps1(1.f), y);
-		y2 = _mm_xor_ps(y2, sign_mask);
+		/* y2 = simde_mm_rcp_ps(y); */
+		/* using simde_mm_rcp_ps here loses on way too much precision, better to do a div */
+		y2 = simde_mm_div_ps(simde_mm_set_ps1(1.f), y);
+		y2 = simde_mm_xor_ps(y2, sign_mask);
 	}
 
 	/* select the correct result from the two polynoms */
 	xmm3 = poly_mask;
-	y = _mm_and_ps(xmm3, y);
-	y2 = _mm_andnot_ps(xmm3, y2);
-	y = _mm_or_ps(y, y2);
+	y = simde_mm_and_ps(xmm3, y);
+	y2 = simde_mm_andnot_ps(xmm3, y2);
+	y = simde_mm_or_ps(y, y2);
 
 	/* update the sign */
-	y = _mm_xor_ps(y, sign_bit);
+	y = simde_mm_xor_ps(y, sign_bit);
 
 	return y;
 }
 
-inline __m128 sse_mathfun_tan_ps(__m128 x) {
+inline simde__m128 sse_mathfun_tan_ps(simde__m128 x) {
 	return sse_mathfun_tancot_ps(x, 0);
 }
 
-inline __m128 sse_mathfun_cot_ps(__m128 x) {
+inline simde__m128 sse_mathfun_cot_ps(simde__m128 x) {
 	return sse_mathfun_tancot_ps(x, 1);
 }
 
 
-inline __m128 sse_mathfun_atan_ps(__m128 x) {
-	__m128 sign_mask = _mm_castsi128_ps(_mm_set1_epi32(0x80000000));
-	__m128 inv_sign_mask = _mm_castsi128_ps(_mm_set1_epi32(~0x80000000));
+inline simde__m128 sse_mathfun_atan_ps(simde__m128 x) {
+	simde__m128 sign_mask = simde_mm_castsi128_ps(simde_mm_set1_epi32(0x80000000));
+	simde__m128 inv_sign_mask = simde_mm_castsi128_ps(simde_mm_set1_epi32(~0x80000000));
 
-	__m128 atanrange_hi = _mm_set_ps1(2.414213562373095);
-	__m128 atanrange_lo = _mm_set_ps1(0.4142135623730950);
-	__m128 cephes_PIO2F = _mm_set_ps1(1.5707963267948966192);
-	__m128 cephes_PIO4F = _mm_set_ps1(0.7853981633974483096);
+	simde__m128 atanrange_hi = simde_mm_set_ps1(2.414213562373095);
+	simde__m128 atanrange_lo = simde_mm_set_ps1(0.4142135623730950);
+	simde__m128 cephes_PIO2F = simde_mm_set_ps1(1.5707963267948966192);
+	simde__m128 cephes_PIO4F = simde_mm_set_ps1(0.7853981633974483096);
 
-	__m128 atancof_p0 = _mm_set_ps1(8.05374449538e-2);
-	__m128 atancof_p1 = _mm_set_ps1(1.38776856032E-1);
-	__m128 atancof_p2 = _mm_set_ps1(1.99777106478E-1);
-	__m128 atancof_p3 = _mm_set_ps1(3.33329491539E-1);
+	simde__m128 atancof_p0 = simde_mm_set_ps1(8.05374449538e-2);
+	simde__m128 atancof_p1 = simde_mm_set_ps1(1.38776856032E-1);
+	simde__m128 atancof_p2 = simde_mm_set_ps1(1.99777106478E-1);
+	simde__m128 atancof_p3 = simde_mm_set_ps1(3.33329491539E-1);
 
-	__m128 sign_bit, y;
+	simde__m128 sign_bit, y;
 
 	sign_bit = x;
 	/* take the absolute value */
-	x = _mm_and_ps(x, inv_sign_mask);
+	x = simde_mm_and_ps(x, inv_sign_mask);
 	/* extract the sign bit (upper one) */
-	sign_bit = _mm_and_ps(sign_bit, sign_mask);
+	sign_bit = simde_mm_and_ps(sign_bit, sign_mask);
 
 	/* range reduction, init x and y depending on range */
 	/* x > 2.414213562373095 */
-	__m128 cmp0 = _mm_cmpgt_ps(x, atanrange_hi);
+	simde__m128 cmp0 = simde_mm_cmpgt_ps(x, atanrange_hi);
 	/* x > 0.4142135623730950 */
-	__m128 cmp1 = _mm_cmpgt_ps(x, atanrange_lo);
+	simde__m128 cmp1 = simde_mm_cmpgt_ps(x, atanrange_lo);
 
 	/* x > 0.4142135623730950 && !(x > 2.414213562373095) */
-	__m128 cmp2 = _mm_andnot_ps(cmp0, cmp1);
+	simde__m128 cmp2 = simde_mm_andnot_ps(cmp0, cmp1);
 
 	/* -(1.0/x) */
-	__m128 y0 = _mm_and_ps(cmp0, cephes_PIO2F);
-	__m128 x0 = _mm_div_ps(_mm_set_ps1(1.f), x);
-	x0 = _mm_xor_ps(x0, sign_mask);
+	simde__m128 y0 = simde_mm_and_ps(cmp0, cephes_PIO2F);
+	simde__m128 x0 = simde_mm_div_ps(simde_mm_set_ps1(1.f), x);
+	x0 = simde_mm_xor_ps(x0, sign_mask);
 
-	__m128 y1 = _mm_and_ps(cmp2, cephes_PIO4F);
+	simde__m128 y1 = simde_mm_and_ps(cmp2, cephes_PIO4F);
 	/* (x-1.0)/(x+1.0) */
-	__m128 x1_o = _mm_sub_ps(x, _mm_set_ps1(1.f));
-	__m128 x1_u = _mm_add_ps(x, _mm_set_ps1(1.f));
-	__m128 x1 = _mm_div_ps(x1_o, x1_u);
+	simde__m128 x1_o = simde_mm_sub_ps(x, simde_mm_set_ps1(1.f));
+	simde__m128 x1_u = simde_mm_add_ps(x, simde_mm_set_ps1(1.f));
+	simde__m128 x1 = simde_mm_div_ps(x1_o, x1_u);
 
-	__m128 x2 = _mm_and_ps(cmp2, x1);
-	x0 = _mm_and_ps(cmp0, x0);
-	x2 = _mm_or_ps(x2, x0);
-	cmp1 = _mm_or_ps(cmp0, cmp2);
-	x2 = _mm_and_ps(cmp1, x2);
-	x = _mm_andnot_ps(cmp1, x);
-	x = _mm_or_ps(x2, x);
+	simde__m128 x2 = simde_mm_and_ps(cmp2, x1);
+	x0 = simde_mm_and_ps(cmp0, x0);
+	x2 = simde_mm_or_ps(x2, x0);
+	cmp1 = simde_mm_or_ps(cmp0, cmp2);
+	x2 = simde_mm_and_ps(cmp1, x2);
+	x = simde_mm_andnot_ps(cmp1, x);
+	x = simde_mm_or_ps(x2, x);
 
-	y = _mm_or_ps(y0, y1);
+	y = simde_mm_or_ps(y0, y1);
 
-	__m128 zz = _mm_mul_ps(x, x);
-	__m128 acc = atancof_p0;
-	acc = _mm_mul_ps(acc, zz);
-	acc = _mm_sub_ps(acc, atancof_p1);
-	acc = _mm_mul_ps(acc, zz);
-	acc = _mm_add_ps(acc, atancof_p2);
-	acc = _mm_mul_ps(acc, zz);
-	acc = _mm_sub_ps(acc, atancof_p3);
-	acc = _mm_mul_ps(acc, zz);
-	acc = _mm_mul_ps(acc, x);
-	acc = _mm_add_ps(acc, x);
-	y = _mm_add_ps(y, acc);
+	simde__m128 zz = simde_mm_mul_ps(x, x);
+	simde__m128 acc = atancof_p0;
+	acc = simde_mm_mul_ps(acc, zz);
+	acc = simde_mm_sub_ps(acc, atancof_p1);
+	acc = simde_mm_mul_ps(acc, zz);
+	acc = simde_mm_add_ps(acc, atancof_p2);
+	acc = simde_mm_mul_ps(acc, zz);
+	acc = simde_mm_sub_ps(acc, atancof_p3);
+	acc = simde_mm_mul_ps(acc, zz);
+	acc = simde_mm_mul_ps(acc, x);
+	acc = simde_mm_add_ps(acc, x);
+	y = simde_mm_add_ps(y, acc);
 
 	/* update the sign */
-	y = _mm_xor_ps(y, sign_bit);
+	y = simde_mm_xor_ps(y, sign_bit);
 
 	return y;
 }
 
-inline __m128 sse_mathfun_atan2_ps(__m128 y, __m128 x) {
-	__m128 sign_mask = _mm_castsi128_ps(_mm_set1_epi32(0x80000000));
-	__m128 x_eq_0 = _mm_cmpeq_ps(x, _mm_setzero_ps());
-	__m128 x_gt_0 = _mm_cmpgt_ps(x, _mm_setzero_ps());
-	__m128 x_le_0 = _mm_cmple_ps(x, _mm_setzero_ps());
-	__m128 y_eq_0 = _mm_cmpeq_ps(y, _mm_setzero_ps());
-	__m128 x_lt_0 = _mm_cmplt_ps(x, _mm_setzero_ps());
-	__m128 y_lt_0 = _mm_cmplt_ps(y, _mm_setzero_ps());
-	__m128 cephes_PIF = _mm_set_ps1(3.141592653589793238);
-	__m128 cephes_PIO2F = _mm_set_ps1(1.5707963267948966192);
+inline simde__m128 sse_mathfun_atan2_ps(simde__m128 y, simde__m128 x) {
+	simde__m128 sign_mask = simde_mm_castsi128_ps(simde_mm_set1_epi32(0x80000000));
+	simde__m128 x_eq_0 = simde_mm_cmpeq_ps(x, simde_mm_setzero_ps());
+	simde__m128 x_gt_0 = simde_mm_cmpgt_ps(x, simde_mm_setzero_ps());
+	simde__m128 x_le_0 = simde_mm_cmple_ps(x, simde_mm_setzero_ps());
+	simde__m128 y_eq_0 = simde_mm_cmpeq_ps(y, simde_mm_setzero_ps());
+	simde__m128 x_lt_0 = simde_mm_cmplt_ps(x, simde_mm_setzero_ps());
+	simde__m128 y_lt_0 = simde_mm_cmplt_ps(y, simde_mm_setzero_ps());
+	simde__m128 cephes_PIF = simde_mm_set_ps1(3.141592653589793238);
+	simde__m128 cephes_PIO2F = simde_mm_set_ps1(1.5707963267948966192);
 
-	__m128 zero_mask = _mm_and_ps(x_eq_0, y_eq_0);
-	__m128 zero_mask_other_case = _mm_and_ps(y_eq_0, x_gt_0);
-	zero_mask = _mm_or_ps(zero_mask, zero_mask_other_case);
+	simde__m128 zero_mask = simde_mm_and_ps(x_eq_0, y_eq_0);
+	simde__m128 zero_mask_other_case = simde_mm_and_ps(y_eq_0, x_gt_0);
+	zero_mask = simde_mm_or_ps(zero_mask, zero_mask_other_case);
 
-	__m128 pio2_mask = _mm_andnot_ps(y_eq_0, x_eq_0);
-	__m128 pio2_mask_sign = _mm_and_ps(y_lt_0, sign_mask);
-	__m128 pio2_result = cephes_PIO2F;
-	pio2_result = _mm_xor_ps(pio2_result, pio2_mask_sign);
-	pio2_result = _mm_and_ps(pio2_mask, pio2_result);
+	simde__m128 pio2_mask = simde_mm_andnot_ps(y_eq_0, x_eq_0);
+	simde__m128 pio2_mask_sign = simde_mm_and_ps(y_lt_0, sign_mask);
+	simde__m128 pio2_result = cephes_PIO2F;
+	pio2_result = simde_mm_xor_ps(pio2_result, pio2_mask_sign);
+	pio2_result = simde_mm_and_ps(pio2_mask, pio2_result);
 
-	__m128 pi_mask = _mm_and_ps(y_eq_0, x_le_0);
-	__m128 pi = cephes_PIF;
-	__m128 pi_result = _mm_and_ps(pi_mask, pi);
+	simde__m128 pi_mask = simde_mm_and_ps(y_eq_0, x_le_0);
+	simde__m128 pi = cephes_PIF;
+	simde__m128 pi_result = simde_mm_and_ps(pi_mask, pi);
 
-	__m128 swap_sign_mask_offset = _mm_and_ps(x_lt_0, y_lt_0);
-	swap_sign_mask_offset = _mm_and_ps(swap_sign_mask_offset, sign_mask);
+	simde__m128 swap_sign_mask_offset = simde_mm_and_ps(x_lt_0, y_lt_0);
+	swap_sign_mask_offset = simde_mm_and_ps(swap_sign_mask_offset, sign_mask);
 
-	__m128 offset0 = _mm_setzero_ps();
-	__m128 offset1 = cephes_PIF;
-	offset1 = _mm_xor_ps(offset1, swap_sign_mask_offset);
+	simde__m128 offset0 = simde_mm_setzero_ps();
+	simde__m128 offset1 = cephes_PIF;
+	offset1 = simde_mm_xor_ps(offset1, swap_sign_mask_offset);
 
-	__m128 offset = _mm_andnot_ps(x_lt_0, offset0);
-	offset = _mm_and_ps(x_lt_0, offset1);
+	simde__m128 offset = simde_mm_andnot_ps(x_lt_0, offset0);
+	offset = simde_mm_and_ps(x_lt_0, offset1);
 
-	__m128 arg = _mm_div_ps(y, x);
-	__m128 atan_result = sse_mathfun_atan_ps(arg);
-	atan_result = _mm_add_ps(atan_result, offset);
+	simde__m128 arg = simde_mm_div_ps(y, x);
+	simde__m128 atan_result = sse_mathfun_atan_ps(arg);
+	atan_result = simde_mm_add_ps(atan_result, offset);
 
 	/* select between zero_result, pio2_result and atan_result */
 
-	__m128 result = _mm_andnot_ps(zero_mask, pio2_result);
-	atan_result = _mm_andnot_ps(pio2_mask, atan_result);
-	atan_result = _mm_andnot_ps(pio2_mask, atan_result);
-	result = _mm_or_ps(result, atan_result);
-	result = _mm_or_ps(result, pi_result);
+	simde__m128 result = simde_mm_andnot_ps(zero_mask, pio2_result);
+	atan_result = simde_mm_andnot_ps(pio2_mask, atan_result);
+	atan_result = simde_mm_andnot_ps(pio2_mask, atan_result);
+	result = simde_mm_or_ps(result, atan_result);
+	result = simde_mm_or_ps(result, pi_result);
 
 	return result;
 }

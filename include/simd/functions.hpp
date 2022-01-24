@@ -13,35 +13,35 @@ namespace simd {
 
 /** `~a & b` */
 inline float_4 andnot(float_4 a, float_4 b) {
-	return float_4(_mm_andnot_ps(a.v, b.v));
+	return float_4(simde_mm_andnot_ps(a.v, b.v));
 }
 
 /** Returns an integer with each bit corresponding to the most significant bit of each element.
 For example, `movemask(float_4::mask())` returns 0xf.
 */
 inline int movemask(float_4 a) {
-	return _mm_movemask_ps(a.v);
+	return simde_mm_movemask_ps(a.v);
 }
 
 /** Returns an integer with each bit corresponding to the most significant bit of each element.
 For example, `movemask(int32_4::mask())` returns 0xf.
 */
 inline int movemask(int32_4 a) {
-	return _mm_movemask_ps(_mm_castsi128_ps(a.v));
+	return simde_mm_movemask_ps(simde_mm_castsi128_ps(a.v));
 }
 
 /** Returns the approximate reciprocal square root.
 Much faster than `1/sqrt(x)`.
 */
 inline float_4 rsqrt(float_4 x) {
-	return float_4(_mm_rsqrt_ps(x.v));
+	return float_4(simde_mm_rsqrt_ps(x.v));
 }
 
 /** Returns the approximate reciprocal.
 Much faster than `1/x`.
 */
 inline float_4 rcp(float_4 x) {
-	return float_4(_mm_rcp_ps(x.v));
+	return float_4(simde_mm_rcp_ps(x.v));
 }
 
 
@@ -89,19 +89,19 @@ Example:
 using std::fmax;
 
 inline float_4 fmax(float_4 x, float_4 b) {
-	return float_4(_mm_max_ps(x.v, b.v));
+	return float_4(simde_mm_max_ps(x.v, b.v));
 }
 
 using std::fmin;
 
 inline float_4 fmin(float_4 x, float_4 b) {
-	return float_4(_mm_min_ps(x.v, b.v));
+	return float_4(simde_mm_min_ps(x.v, b.v));
 }
 
 using std::sqrt;
 
 inline float_4 sqrt(float_4 x) {
-	return float_4(_mm_sqrt_ps(x.v));
+	return float_4(simde_mm_sqrt_ps(x.v));
 }
 
 using std::log;
@@ -161,7 +161,7 @@ inline float_4 atan2(float_4 x, float_4 y) {
 using std::trunc;
 
 inline float_4 trunc(float_4 a) {
-	return float_4(_mm_cvtepi32_ps(_mm_cvttps_epi32(a.v)));
+	return float_4(simde_mm_cvtepi32_ps(simde_mm_cvttps_epi32(a.v)));
 }
 
 using std::floor;

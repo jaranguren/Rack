@@ -1,6 +1,6 @@
 #pragma once
 #include <cstring>
-#include <pmmintrin.h>
+#include "sse2.h"
 
 
 namespace rack {
@@ -27,7 +27,7 @@ template <typename TYPE, int SIZE>
 struct Vector;
 
 
-/** Wrapper for `__m128` representing an aligned vector of 4 single-precision float values.
+/** Wrapper for `simde__m128` representing an aligned vector of 4 single-precision float values.
 */
 template <>
 struct Vector<float, 4> {
@@ -35,7 +35,7 @@ struct Vector<float, 4> {
 	constexpr static int size = 4;
 
 	union {
-		__m128 v;
+		simde__m128 v;
 		/** Accessing this array of scalars is slow and defeats the purpose of vectorizing.
 		*/
 		float s[4];
@@ -44,27 +44,27 @@ struct Vector<float, 4> {
 	/** Constructs an uninitialized vector. */
 	Vector() = default;
 
-	/** Constructs a vector from a native `__m128` type. */
-	Vector(__m128 v) : v(v) {}
+	/** Constructs a vector from a native `simde__m128` type. */
+	Vector(simde__m128 v) : v(v) {}
 
 	/** Constructs a vector with all elements set to `x`. */
 	Vector(float x) {
-		v = _mm_set1_ps(x);
+		v = simde_mm_set1_ps(x);
 	}
 
 	/** Constructs a vector from four scalars. */
 	Vector(float x1, float x2, float x3, float x4) {
-		v = _mm_setr_ps(x1, x2, x3, x4);
+		v = simde_mm_setr_ps(x1, x2, x3, x4);
 	}
 
 	/** Returns a vector with all 0 bits. */
 	static Vector zero() {
-		return Vector(_mm_setzero_ps());
+		return Vector(simde_mm_setzero_ps());
 	}
 
 	/** Returns a vector with all 1 bits. */
 	static Vector mask() {
-		return Vector(_mm_castsi128_ps(_mm_cmpeq_epi32(_mm_setzero_si128(), _mm_setzero_si128())));
+		return Vector(simde_mm_castsi128_ps(simde_mm_cmpeq_epi32(simde_mm_setzero_si128(), simde_mm_setzero_si128())));
 	}
 
 	/** Reads an array of 4 values.
@@ -72,18 +72,18 @@ struct Vector<float, 4> {
 	*/
 	static Vector load(const float* x) {
 		/*
-		My benchmarks show that _mm_loadu_ps() performs equally as fast as _mm_load_ps() when data is actually aligned.
+		My benchmarks show that simde_mm_loadu_ps() performs equally as fast as simde_mm_load_ps() when data is actually aligned.
 		This post seems to agree. https://stackoverflow.com/a/20265193/272642
-		I therefore use _mm_loadu_ps() for generality, so you can load unaligned arrays using the same function (although load aligned arrays if you can for best performance).
+		I therefore use simde_mm_loadu_ps() for generality, so you can load unaligned arrays using the same function (although load aligned arrays if you can for best performance).
 		*/
-		return Vector(_mm_loadu_ps(x));
+		return Vector(simde_mm_loadu_ps(x));
 	}
 
 	/** Writes an array of 4 values.
 	On little-endian machines (e.g. x86_64), the order is reversed, so `x[0]` corresponds to `vector.s[3]`.
 	*/
 	void store(float* x) {
-		_mm_storeu_ps(x, v);
+		simde_mm_storeu_ps(x, v);
 	}
 
 	/** Accessing vector elements individually is slow and defeats the purpose of vectorizing.
@@ -109,33 +109,33 @@ struct Vector<int32_t, 4> {
 	constexpr static int size = 4;
 
 	union {
-		__m128i v;
+		simde__m128i v;
 		int32_t s[4];
 	};
 
 	Vector() = default;
-	Vector(__m128i v) : v(v) {}
+	Vector(simde__m128i v) : v(v) {}
 	Vector(int32_t x) {
-		v = _mm_set1_epi32(x);
+		v = simde_mm_set1_epi32(x);
 	}
 	Vector(int32_t x1, int32_t x2, int32_t x3, int32_t x4) {
-		v = _mm_setr_epi32(x1, x2, x3, x4);
+		v = simde_mm_setr_epi32(x1, x2, x3, x4);
 	}
 	static Vector zero() {
-		return Vector(_mm_setzero_si128());
+		return Vector(simde_mm_setzero_si128());
 	}
 	static Vector mask() {
-		return Vector(_mm_cmpeq_epi32(_mm_setzero_si128(), _mm_setzero_si128()));
+		return Vector(simde_mm_cmpeq_epi32(simde_mm_setzero_si128(), simde_mm_setzero_si128()));
 	}
 	static Vector load(const int32_t* x) {
 		// HACK
-		// Use _mm_loadu_si128() because GCC doesn't support _mm_loadu_si32()
-		return Vector(_mm_loadu_si128((const __m128i*) x));
+		// Use simde_mm_loadu_si128() because GCC doesn't support simde_mm_loadu_si32()
+		return Vector(simde_mm_loadu_si128((const simde__m128i*) x));
 	}
 	void store(int32_t* x) {
 		// HACK
-		// Use _mm_storeu_si128() because GCC doesn't support _mm_storeu_si32()
-		_mm_storeu_si128((__m128i*) x, v);
+		// Use simde_mm_storeu_si128() because GCC doesn't support simde_mm_storeu_si32()
+		simde_mm_storeu_si128((simde__m128i*) x, v);
 	}
 	int32_t& operator[](int i) {
 		return s[i];
@@ -152,19 +152,19 @@ struct Vector<int32_t, 4> {
 
 
 inline Vector<float, 4>::Vector(Vector<int32_t, 4> a) {
-	v = _mm_cvtepi32_ps(a.v);
+	v = simde_mm_cvtepi32_ps(a.v);
 }
 
 inline Vector<int32_t, 4>::Vector(Vector<float, 4> a) {
-	v = _mm_cvttps_epi32(a.v);
+	v = simde_mm_cvttps_epi32(a.v);
 }
 
 inline Vector<float, 4> Vector<float, 4>::cast(Vector<int32_t, 4> a) {
-	return Vector(_mm_castsi128_ps(a.v));
+	return Vector(simde_mm_castsi128_ps(a.v));
 }
 
 inline Vector<int32_t, 4> Vector<int32_t, 4>::cast(Vector<float, 4> a) {
-	return Vector(_mm_castps_si128(a.v));
+	return Vector(simde_mm_castps_si128(a.v));
 }
 
 
@@ -183,16 +183,16 @@ inline Vector<int32_t, 4> Vector<int32_t, 4>::cast(Vector<float, 4> a) {
 		return a = opfunc(a, b); \
 	}
 
-DECLARE_VECTOR_OPERATOR_INFIX(float, 4, operator+, _mm_add_ps)
-DECLARE_VECTOR_OPERATOR_INFIX(int32_t, 4, operator+, _mm_add_epi32)
+DECLARE_VECTOR_OPERATOR_INFIX(float, 4, operator+, simde_mm_add_ps)
+DECLARE_VECTOR_OPERATOR_INFIX(int32_t, 4, operator+, simde_mm_add_epi32)
 
-DECLARE_VECTOR_OPERATOR_INFIX(float, 4, operator-, _mm_sub_ps)
-DECLARE_VECTOR_OPERATOR_INFIX(int32_t, 4, operator-, _mm_sub_epi32)
+DECLARE_VECTOR_OPERATOR_INFIX(float, 4, operator-, simde_mm_sub_ps)
+DECLARE_VECTOR_OPERATOR_INFIX(int32_t, 4, operator-, simde_mm_sub_epi32)
 
-DECLARE_VECTOR_OPERATOR_INFIX(float, 4, operator*, _mm_mul_ps)
+DECLARE_VECTOR_OPERATOR_INFIX(float, 4, operator*, simde_mm_mul_ps)
 // DECLARE_VECTOR_OPERATOR_INFIX(int32_t, 4, operator*, NOT AVAILABLE IN SSE3)
 
-DECLARE_VECTOR_OPERATOR_INFIX(float, 4, operator/, _mm_div_ps)
+DECLARE_VECTOR_OPERATOR_INFIX(float, 4, operator/, simde_mm_div_ps)
 // DECLARE_VECTOR_OPERATOR_INFIX(int32_t, 4, operator/, NOT AVAILABLE IN SSE3)
 
 /* Use these to apply logic, bit masks, and conditions to elements.
@@ -204,14 +204,14 @@ Subtract 1 from value if greater than or equal to 1.
 
 	x -= (x >= 1.f) & 1.f;
 */
-DECLARE_VECTOR_OPERATOR_INFIX(float, 4, operator^, _mm_xor_ps)
-DECLARE_VECTOR_OPERATOR_INFIX(int32_t, 4, operator^, _mm_xor_si128)
+DECLARE_VECTOR_OPERATOR_INFIX(float, 4, operator^, simde_mm_xor_ps)
+DECLARE_VECTOR_OPERATOR_INFIX(int32_t, 4, operator^, simde_mm_xor_si128)
 
-DECLARE_VECTOR_OPERATOR_INFIX(float, 4, operator&, _mm_and_ps)
-DECLARE_VECTOR_OPERATOR_INFIX(int32_t, 4, operator&, _mm_and_si128)
+DECLARE_VECTOR_OPERATOR_INFIX(float, 4, operator&, simde_mm_and_ps)
+DECLARE_VECTOR_OPERATOR_INFIX(int32_t, 4, operator&, simde_mm_and_si128)
 
-DECLARE_VECTOR_OPERATOR_INFIX(float, 4, operator|, _mm_or_ps)
-DECLARE_VECTOR_OPERATOR_INFIX(int32_t, 4, operator|, _mm_or_si128)
+DECLARE_VECTOR_OPERATOR_INFIX(float, 4, operator|, simde_mm_or_ps)
+DECLARE_VECTOR_OPERATOR_INFIX(int32_t, 4, operator|, simde_mm_or_si128)
 
 DECLARE_VECTOR_OPERATOR_INCREMENT(float, 4, operator+=, operator+)
 DECLARE_VECTOR_OPERATOR_INCREMENT(int32_t, 4, operator+=, operator+)
@@ -234,28 +234,28 @@ DECLARE_VECTOR_OPERATOR_INCREMENT(int32_t, 4, operator&=, operator&)
 DECLARE_VECTOR_OPERATOR_INCREMENT(float, 4, operator|=, operator|)
 DECLARE_VECTOR_OPERATOR_INCREMENT(int32_t, 4, operator|=, operator|)
 
-DECLARE_VECTOR_OPERATOR_INFIX(float, 4, operator==, _mm_cmpeq_ps)
-DECLARE_VECTOR_OPERATOR_INFIX(int32_t, 4, operator==, _mm_cmpeq_epi32)
+DECLARE_VECTOR_OPERATOR_INFIX(float, 4, operator==, simde_mm_cmpeq_ps)
+DECLARE_VECTOR_OPERATOR_INFIX(int32_t, 4, operator==, simde_mm_cmpeq_epi32)
 
-DECLARE_VECTOR_OPERATOR_INFIX(float, 4, operator>=, _mm_cmpge_ps)
+DECLARE_VECTOR_OPERATOR_INFIX(float, 4, operator>=, simde_mm_cmpge_ps)
 inline Vector<int32_t, 4> operator>=(const Vector<int32_t, 4>& a, const Vector<int32_t, 4>& b) {
-	return Vector<int32_t, 4>(_mm_cmpgt_epi32(a.v, b.v)) ^ Vector<int32_t, 4>::mask();
+	return Vector<int32_t, 4>(simde_mm_cmpgt_epi32(a.v, b.v)) ^ Vector<int32_t, 4>::mask();
 }
 
-DECLARE_VECTOR_OPERATOR_INFIX(float, 4, operator>, _mm_cmpgt_ps)
-DECLARE_VECTOR_OPERATOR_INFIX(int32_t, 4, operator>, _mm_cmpgt_epi32)
+DECLARE_VECTOR_OPERATOR_INFIX(float, 4, operator>, simde_mm_cmpgt_ps)
+DECLARE_VECTOR_OPERATOR_INFIX(int32_t, 4, operator>, simde_mm_cmpgt_epi32)
 
-DECLARE_VECTOR_OPERATOR_INFIX(float, 4, operator<=, _mm_cmple_ps)
+DECLARE_VECTOR_OPERATOR_INFIX(float, 4, operator<=, simde_mm_cmple_ps)
 inline Vector<int32_t, 4> operator<=(const Vector<int32_t, 4>& a, const Vector<int32_t, 4>& b) {
-	return Vector<int32_t, 4>(_mm_cmplt_epi32(a.v, b.v)) ^ Vector<int32_t, 4>::mask();
+	return Vector<int32_t, 4>(simde_mm_cmplt_epi32(a.v, b.v)) ^ Vector<int32_t, 4>::mask();
 }
 
-DECLARE_VECTOR_OPERATOR_INFIX(float, 4, operator<, _mm_cmplt_ps)
-DECLARE_VECTOR_OPERATOR_INFIX(int32_t, 4, operator<, _mm_cmplt_epi32)
+DECLARE_VECTOR_OPERATOR_INFIX(float, 4, operator<, simde_mm_cmplt_ps)
+DECLARE_VECTOR_OPERATOR_INFIX(int32_t, 4, operator<, simde_mm_cmplt_epi32)
 
-DECLARE_VECTOR_OPERATOR_INFIX(float, 4, operator!=, _mm_cmpneq_ps)
+DECLARE_VECTOR_OPERATOR_INFIX(float, 4, operator!=, simde_mm_cmpneq_ps)
 inline Vector<int32_t, 4> operator!=(const Vector<int32_t, 4>& a, const Vector<int32_t, 4>& b) {
-	return Vector<int32_t, 4>(_mm_cmpeq_epi32(a.v, b.v)) ^ Vector<int32_t, 4>::mask();
+	return Vector<int32_t, 4>(simde_mm_cmpeq_epi32(a.v, b.v)) ^ Vector<int32_t, 4>::mask();
 }
 
 /** `+a` */
@@ -324,12 +324,12 @@ inline Vector<int32_t, 4> operator~(const Vector<int32_t, 4>& a) {
 
 /** `a << b` */
 inline Vector<int32_t, 4> operator<<(const Vector<int32_t, 4>& a, const int& b) {
-	return Vector<int32_t, 4>(_mm_slli_epi32(a.v, b));
+	return Vector<int32_t, 4>(simde_mm_slli_epi32(a.v, b));
 }
 
 /** `a >> b` */
 inline Vector<int32_t, 4> operator>>(const Vector<int32_t, 4>& a, const int& b) {
-	return Vector<int32_t, 4>(_mm_srli_epi32(a.v, b));
+	return Vector<int32_t, 4>(simde_mm_srli_epi32(a.v, b));
 }
 
 
