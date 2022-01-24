@@ -12,7 +12,13 @@ namespace random {
 
 
 thread_local Xoroshiro128Plus rng;
+
+#if (defined __RX__) || (defined __sh__)
+// Remove the atomic thread counter, since no multi-threading is going to be used for embedded
+static uint64_t threadCounter = 0;
+#else
 static std::atomic<uint64_t> threadCounter {0};
+#endif
 
 
 void init() {
